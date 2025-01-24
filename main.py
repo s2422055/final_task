@@ -1,6 +1,7 @@
 import requests
 import sqlite3
 import os
+import csv
 from bs4 import BeautifulSoup
 import flet as ft
 
@@ -48,6 +49,19 @@ def initialize_database():
     con.close()
 
 initialize_database()
+
+# CSVファイルからデータを読み込み、treasureテーブルに保存
+def load_data_from_csv(csv_file):
+    with sqlite3.connect(db_name) as con:
+        cur = con.cursor()
+        with open(csv_file, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                cur.execute('''
+                    INSERT OR REPLACE INTO treasure (prefectures, national_treasure, important_cultural_property, important_cultural_landscape, important_traditional_buildings)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (row['prefectures'], row['national_treasure'], row['important_cultural_property'], row['important_cultural_landscape'], row['important_traditional_buildings']))
+        con.commit()
 
 # ホテルURLデータ取得
 def fetch_hotel_data(prefecture):
@@ -163,4 +177,10 @@ def main(page: ft.Page):
     )
 
 if __name__ == "__main__":
+    # CSVファイルからデータを読み込む
+    csv_file = 'final_task/final_data.csv'
+    if os.path.exists(csv_file):
+        load_data_from_csv(csv_file)
+    else:
+        print(f"CSV file '{csv_file}' not found.")
     ft.app(target=main)
